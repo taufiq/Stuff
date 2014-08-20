@@ -4,85 +4,60 @@
 
 #define DS1307_ADDRESS 0x68
 
-const int lightSensor = 0;
+const int lightHelperSensor = 0;
 const int tempSensor = 1;
 
 int counter = 1;
 
-
-const int musicPin1 = 10;
+const int musicHelperPin1 = 10;
 const int fanPin1 = 9;
 const int fanPin2 = 8;
-const int lightPin1 = 7;
-const int lightPin2 = 6;
-const int lightPin3 = 5;
+const int lightHelperPin1 = 7;
+const int lightHelperPin2 = 6;
+const int lightHelperPin3 = 5;
 bool once = true;
 bool once_for_off = false;
 
-int lightReading;
+int lightHelperReading;
 int tempReading;
 int timeReading[3];
 
 //Welcoming
-AndeeHelper welcomeButton;
+AndeeHelper welcomeHelper;
+bool welcomed = true;
 
 //Toggle
-AndeeHelper togglebutton;
-int state = 0;
+AndeeHelper manualHelper;
+AndeeHelper autoHelper;
+AndeeHelper fanToggleHelper;
+AndeeHelper musicToggleHelper;
 
 //Manual(PUT HERE)
-AndeeHelper light;
+AndeeHelper lightHelper;
 
 //Automatic(Here :P)
-AndeeHelper temperature;
-AndeeHelper lighting;
-AndeeHelper music;
+AndeeHelper temperatureHelper;
+AndeeHelper musicHelper;
 
 void setup() {
   Serial.begin(9600);
   Andee.begin();
   Andee.clear();
   Wire.begin();
-  state = 0;
-  pinMode(lightSensor, INPUT);
+  pinMode(lightHelperSensor, INPUT);
   pinMode(tempSensor, INPUT);
-  
-  set();
+  initialize();
 }
 
 void loop() {
   welcome();
   setDate();
+  checkToggleButton();
   Serial.print(timeReading[0]);
   Serial.print(" : ");
   Serial.print(timeReading[1]);
   Serial.print(" : ");
   Serial.println(timeReading[2]);
-
-  
-  if(togglebutton.isPressed()) {
-    togglebutton.ack(); 
-    if(state == 0) {
-      togglebutton.setTitle("Manual");
-      state = 1;
-      togglebutton.setColor(RED);
-      light.update();
-      temperature.remove();
-      lighting.remove();
-      music.remove();
-    } else {
-      togglebutton.setTitle("Automation");
-      state = 0;
-      togglebutton.setColor(GREEN);
-      light.remove();
-      temperature.update();
-      lighting.update();
-      music.update();
-    }  
-  }
-  togglebutton.update();
-  
-
 }
 
 byte bcdToDec(byte val) {
@@ -110,46 +85,95 @@ void setDate() {
   timeReading[1] = minute;
   timeReading[2] = hour; 
 }
-void set(){
-  togglebutton.setId(0);
-  togglebutton.setType(BUTTON_IN);
-  togglebutton.setLocation(0,0,FULL);
-  togglebutton.setTitle("Neutral, tap for Manual");
-  togglebutton.setColor(BLUE);
+
+void initialize() {
+//  lightHelper.setId(1);
+//  lightHelper.setType(SLIDER_IN);
+//  lightHelper.setLocation(1,0,FULL);
+//  lightHelper.setTitle("Light Brightness");
+//  lightHelper.setSliderReportMode(ON_VALUE_CHANGE);
+//  lightHelper.setSliderNumIntervals(100);
+//  lightHelper.setColor("4Dda6e17");
   
-  light.setId(1);
-  light.setType(SLIDER_IN);
-  light.setLocation(1,0,FULL);
-  light.setTitle("Light Brightness");
-  light.setSliderReportMode(ON_VALUE_CHANGE);
-  light.setSliderNumIntervals(100);
-  light.setColor("4Dda6e17");
+  welcomeHelper.setId(2);
+  welcomeHelper.setType(DATA_OUT);
+  welcomeHelper.setLocation(0,0,FULL);
+  welcomeHelper.setData("Welcome to Smart Living Bedroom, Made by Group KYNRT");
+  welcomeHelper.setColor("FF357385");
   
-  welcomeButton.setId(2);
-  welcomeButton.setType(DATA_OUT);
-  welcomeButton.setLocation(0,0,FULL);
-  welcomeButton.setData("Welcome to Smart Living Bedroom, Made by Group KYNRT");
-  welcomeButton.setColor("FF357385");
+  temperatureHelper.setId(3);
+  temperatureHelper.setType(DATA_OUT);
+  temperatureHelper.setLocation(1,0,FULL);
+  temperatureHelper.setTitle("Current Temperature");
   
-  temperature.setId(3);
-  temperature.setType(DATA_OUT);
-  temperature.setLocation(1,0,FULL);
-  temperature.setTitle("Current Temperature");
+  musicHelper.setId(5);
+  musicHelper.setType(DATA_OUT);
+  musicHelper.setLocation(2,0,FULL);
+  musicHelper.setTitle("Music State");
   
-  lighting.setId(4);
-  lighting.setType(DATA_OUT);
-  lighting.setLocation(2,0,FULL);
-  lighting.setTitle("Current Lighting");  
+  manualHelper.setId(6);
+  manualHelper.setType(BUTTON_IN);
+  manualHelper.setLocation(0,0,HALF);
+  manualHelper.setTitle("Manual");
+ 
+  autoHelper.setId(7);
+  autoHelper.setType(BUTTON_IN);
+  autoHelper.setLocation(0,0,HALF);
+  autoHelper.setTitle("Automatic"); 
   
-  music.setId(5);
-  music.setType(DATA_OUT);
-  music.setLocation(3,0,FULL);
-  music.setTitle("Music State");
-}
-void welcome(){
-  welcomeButton.update();
-  delay(2000);
-  welcomeButton.remove();
+  fanToggleHelper.setId(8);
+  fanToggleHelper.setType(BUTTON_IN);
+  fanToggleHelper.setLocation(1,0,FULL);
+  fanToggleHelper.setTitle("Fan Off");
+  
+  musicToggleHelper.setId(9);
+  musicToggleHelper.setType(BUTTON_IN);
+  musicToggleHelper.setLocation(2,0,FULL);
+  musicToggleHelper.setTitle("Music Off");
 }
 
+void welcome() {
+  if (welcomed) {
+    welcomeHelper.update();
+    delay(2000);
+    welcomeHelper.remove();
+    setManual();
+    welcomed = false;
+  }
+}
 
+void setManual() {
+   manualHelper.setColor(RED);
+   autoHelper.setColor(BLUE);
+   manualHelper.update();
+   autoHelper.update();
+   fanToggleHelper.update();
+   musicToggleHelper.update();
+   temperatureHelper.remove();
+   musicHelper.remove();
+}
+
+void setAuto() {
+   autoHelper.setColor(RED);
+   manualHelper.setColor(BLUE);
+   manualHelper.update();
+   autoHelper.update();
+   fanToggleHelper.remove();
+   musicToggleHelper.remove();
+   temperatureHelper.update();
+   musicHelper.update();
+}
+
+void checkToggleButton() {
+  if (autoHelper.isPressed()) {
+    autoHelper.ack();
+    setAuto();
+  } else if (manualHelper.isPressed()) {
+    manualHelper.ack();
+    setManual();
+  }
+}
+
+void changeDisplay(AndeeHelper helper, int newReading) {
+  helper.setData(newReading);
+}
