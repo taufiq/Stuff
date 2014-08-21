@@ -15,8 +15,8 @@ const int fanPin2 = 8;
 const int lightHelperPin1 = 7;
 const int lightHelperPin2 = 6;
 const int lightHelperPin3 = 5;
-bool once = true;
-bool once_for_off = false;
+int fanToggle_State = 0;
+int musicToggle_State = 0;
 
 int lightHelperReading;
 int tempReading;
@@ -53,6 +53,7 @@ void loop() {
   welcome();
   setDate();
   checkToggleButton();
+  checkFan_MusicButton();
   Serial.print(timeReading[0]);
   Serial.print(" : ");
   Serial.print(timeReading[1]);
@@ -172,8 +173,52 @@ void checkToggleButton() {
     manualHelper.ack();
     setManual();
   }
+  
 }
 
 void changeDisplay(AndeeHelper helper, int newReading) {
   helper.setData(newReading);
+}
+void checkFan_MusicButton(){
+ if(fanToggleHelper.isPressed()){
+    fanToggleHelper.ack();
+    if(fanToggle_State == 0){
+    fanToggle_State = 1;
+    fanToggleHelper.setColor(GREEN);
+    fanToggleHelper.setTitle("Fan On");
+    fanToggleHelper.update();
+    setFanPin1(HIGH);
+    }else{
+     fanToggle_State = 0;
+     fanToggleHelper.setColor(RED);
+     fanToggleHelper.setTitle("Fan Off");
+     fanToggleHelper.update();
+    }
+  }
+  if(musicToggleHelper.isPressed()){
+    musicToggleHelper.ack();
+    if(musicToggle_State == 0){
+    musicToggle_State = 1;
+    musicToggleHelper.setColor(GREEN);
+    musicToggleHelper.setTitle("Music On");
+    musicToggleHelper.update();
+    setMusicPin(HIGH);
+    }else{
+    musicToggle_State = 0;  
+    musicToggleHelper.setColor(RED);
+    musicToggleHelper.setTitle("Music Off");
+    musicToggleHelper.update(); 
+    setMusicPin(LOW);
+    }
+  } 
+}
+
+void setFanPin1(int value) {
+  
+}
+void setFanPin2(int value) {
+  
+}
+void setMusicPin(int value){
+  
 }
