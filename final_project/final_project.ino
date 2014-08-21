@@ -8,13 +8,10 @@ const int lightHelperSensor = 0;
 const int tempSensor = 1;
 
 int counter = 1;
-
-const int musicHelperPin1 = 10;
-const int fanPin1 = 9;
+int sa = 0;
+const int musicPin1 = 10;
+const int fanPin1 = 13;
 const int fanPin2 = 8;
-const int lightHelperPin1 = 7;
-const int lightHelperPin2 = 6;
-const int lightHelperPin3 = 5;
 int fanToggle_State = 0;
 int musicToggle_State = 0;
 
@@ -44,6 +41,7 @@ void setup() {
   Andee.begin();
   Andee.clear();
   Wire.begin();
+  pinMode(fanPin1, OUTPUT);
   pinMode(lightHelperSensor, INPUT);
   pinMode(tempSensor, INPUT);
   initialize();
@@ -54,11 +52,12 @@ void loop() {
   setDate();
   checkToggleButton();
   checkFan_MusicButton();
-  Serial.print(timeReading[0]);
-  Serial.print(" : ");
-  Serial.print(timeReading[1]);
-  Serial.print(" : ");
-  Serial.println(timeReading[2]);
+  Serial.println(sa);
+//  Serial.print(timeReading[0]);
+//  Serial.print(" : ");
+//  Serial.print(timeReading[1]);
+//  Serial.print(" : ");
+//  Serial.println(timeReading[2]);
 }
 
 byte bcdToDec(byte val) {
@@ -126,11 +125,13 @@ void initialize() {
   fanToggleHelper.setType(BUTTON_IN);
   fanToggleHelper.setLocation(1,0,FULL);
   fanToggleHelper.setTitle("Fan Off");
+  fanToggleHelper.setColor(RED);
   
   musicToggleHelper.setId(9);
   musicToggleHelper.setType(BUTTON_IN);
   musicToggleHelper.setLocation(2,0,FULL);
   musicToggleHelper.setTitle("Music Off");
+  musicToggleHelper.setColor(RED);
 }
 
 void welcome() {
@@ -180,6 +181,7 @@ void changeDisplay(AndeeHelper helper, int newReading) {
   helper.setData(newReading);
 }
 void checkFan_MusicButton(){
+  digitalWrite(13,HIGH);
  if(fanToggleHelper.isPressed()){
     fanToggleHelper.ack();
     if(fanToggle_State == 0){
@@ -187,13 +189,13 @@ void checkFan_MusicButton(){
     fanToggleHelper.setColor(GREEN);
     fanToggleHelper.setTitle("Fan On");
     fanToggleHelper.update();
-    setFanPin1(HIGH);
     }else{
      fanToggle_State = 0;
      fanToggleHelper.setColor(RED);
      fanToggleHelper.setTitle("Fan Off");
      fanToggleHelper.update();
-    }
+     Serial.println("OFF");
+     }
   }
   if(musicToggleHelper.isPressed()){
     musicToggleHelper.ack();
@@ -214,11 +216,12 @@ void checkFan_MusicButton(){
 }
 
 void setFanPin1(int value) {
-  
+  digitalWrite(fanPin1, value);
 }
 void setFanPin2(int value) {
-  
+  digitalWrite(fanPin2, value);
 }
-void setMusicPin(int value){
-  
+void setMusicPin(int value) {
+  digitalWrite(musicPin1, value);
 }
+
