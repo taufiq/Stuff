@@ -4,20 +4,21 @@
 
 #define DS1307_ADDRESS 0x68
 
+bool automated = false;
+
 const int lightHelperSensor = 0;
 const int tempSensor = 1;
 
 int counter = 1;
-int sa = 0;
 const int musicPin1 = 10;
-const int fanPin1 = 13;
+const int fanPin1 = 9;
 const int fanPin2 = 8;
 int fanToggle_State = 0;
 int musicToggle_State = 0;
 
 int lightHelperReading;
 int tempReading;
-int timeReading[3];
+int timeReading[4];
 
 //Welcoming
 AndeeHelper welcomeHelper;
@@ -50,21 +51,19 @@ void setup() {
 void loop() {
   welcome();
   setDate();
+  updateRTCautomation();
   checkToggleButton();
   checkFan_MusicButton();
-  Serial.println(sa);
-//  Serial.print(timeReading[0]);
-//  Serial.print(" : ");
-//  Serial.print(timeReading[1]);
-//  Serial.print(" : ");
-//  Serial.println(timeReading[2]);
 }
 
 byte bcdToDec(byte val) {
+  Serial.println("bcdToDec()");
   return ((val/16*10) + (val%16));
 }
 
 void setDate() {
+  Serial.println("setDate()");
+  // Reset the register pointer
   Wire.beginTransmission(DS1307_ADDRESS);
 
   byte zero = 0x00;
@@ -75,18 +74,33 @@ void setDate() {
 
   int second = bcdToDec(Wire.read());
   int minute = bcdToDec(Wire.read());
-  int hour = bcdToDec(Wire.read() & 0b111111);
-  int weekDay = bcdToDec(Wire.read());
+  int hour = bcdToDec(Wire.read() & 0b111111); //24 hour time
+  int weekDay = bcdToDec(Wire.read()); //0-6 -> sunday - Saturday
   int monthDay = bcdToDec(Wire.read());
   int month = bcdToDec(Wire.read());
   int year = bcdToDec(Wire.read());
-   
+
+  //print the date EG   3/1/11 23:59:59
+//  Serial.print(month);
+//  Serial.print("/");
+//  Serial.print(monthDay);
+//  Serial.print("/");
+//  Serial.print(year);
+//  Serial.print(" ");
+//  Serial.print(hour);
+//  Serial.print(":");
+//  Serial.print(minute);
+//  Serial.print(":");
+//  Serial.println(second);
+  
   timeReading[0] = second;
   timeReading[1] = minute;
-  timeReading[2] = hour; 
+  timeReading[2] = hour;
+  timeReading[3] = weekDay;
 }
 
 void initialize() {
+  Serial.println("initialize()");
 //  lightHelper.setId(1);
 //  lightHelper.setType(SLIDER_IN);
 //  lightHelper.setLocation(1,0,FULL);
@@ -135,6 +149,7 @@ void initialize() {
 }
 
 void welcome() {
+  Serial.println("welcome()");
   if (welcomed) {
     welcomeHelper.update();
     delay(2000);
@@ -142,6 +157,28 @@ void welcome() {
     setManual();
     welcomed = false;
   }
+}
+
+void updateRTCautomation() {
+  Serial.println("updateRTCautomation()");
+  if (timeReading[3] != 6 || timeReading[3] != 7) {
+    if ((timeReading[2] >= 17 && timeReading[2] <= 18) || (timeReading[2] >= 23 && timeReading[2] <= 3)) {
+      setFanPin1(HIGH);
+      setFanPin2(HIGH);
+    } else {
+      setFanPin1(LOW);
+      setFanPin2(LOW);
+    }
+  } else {
+    if ((timeReading[2] >= 11 && timeReading[2] <= 13) || (timeReading[2] >= 16 && timeReading[2] <= 18) || (timeReading[2] >= 23 && timeReading[2] <= 3)) {
+      setFanPin1(HIGH);
+      setFanPin2(HIGH);
+    } else {
+      setFanPin1(LOW);
+      setFanPin2(LOW);
+    }
+  }
+  Serial.println(timeReading[2]);
 }
 
 void setManual() {
@@ -180,7 +217,8 @@ void checkToggleButton() {
 void changeDisplay(AndeeHelper helper, int newReading) {
   helper.setData(newReading);
 }
-void checkFan_MusicButton(){
+
+void checkFan_MusicButton() {
   digitalWrite(13,HIGH);
  if(fanToggleHelper.isPressed()){
     fanToggleHelper.ack();
@@ -189,7 +227,7 @@ void checkFan_MusicButton(){
     fanToggleHelper.setColor(GREEN);
     fanToggleHelper.setTitle("Fan On");
     fanToggleHelper.update();
-    }else{
+    } else {
      fanToggle_State = 0;
      fanToggleHelper.setColor(RED);
      fanToggleHelper.setTitle("Fan Off");
@@ -200,17 +238,17 @@ void checkFan_MusicButton(){
   if(musicToggleHelper.isPressed()){
     musicToggleHelper.ack();
     if(musicToggle_State == 0){
-    musicToggle_State = 1;
-    musicToggleHelper.setColor(GREEN);
-    musicToggleHelper.setTitle("Music On");
-    musicToggleHelper.update();
-    setMusicPin(HIGH);
-    }else{
-    musicToggle_State = 0;  
-    musicToggleHelper.setColor(RED);
-    musicToggleHelper.setTitle("Music Off");
-    musicToggleHelper.update(); 
-    setMusicPin(LOW);
+      musicToggle_State = 1;
+      musicToggleHelper.setColor(GREEN);
+      musicToggleHelper.setTitle("Music On");
+      musicToggleHelper.update();
+      setMusicPin(HIGH);
+    } else {
+      musicToggle_State = 0;  
+      musicToggleHelper.setColor(RED);
+      musicToggleHelper.setTitle("Music Off");
+      musicToggleHelper.update(); 
+      setMusicPin(LOW);
     }
   } 
 }
@@ -218,9 +256,11 @@ void checkFan_MusicButton(){
 void setFanPin1(int value) {
   digitalWrite(fanPin1, value);
 }
+
 void setFanPin2(int value) {
   digitalWrite(fanPin2, value);
 }
+
 void setMusicPin(int value) {
   digitalWrite(musicPin1, value);
 }
