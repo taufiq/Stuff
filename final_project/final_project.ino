@@ -50,14 +50,14 @@ void setup() {
 
 void loop() {
   welcome();
-  setDate();
-  updateRTCautomation();
   checkToggleButton();
   checkFan_MusicButton();
+      setDate();
+  updateRTCautomation();
 }
 
+
 byte bcdToDec(byte val) {
-  Serial.println("bcdToDec()");
   return ((val/16*10) + (val%16));
 }
 
