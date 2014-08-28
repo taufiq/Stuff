@@ -81,17 +81,17 @@ void setDate() {
   int year = bcdToDec(Wire.read());
 
   //print the date EG   3/1/11 23:59:59
-//  Serial.print(month);
-//  Serial.print("/");
-//  Serial.print(monthDay);
-//  Serial.print("/");
-//  Serial.print(year);
-//  Serial.print(" ");
-//  Serial.print(hour);
-//  Serial.print(":");
-//  Serial.print(minute);
-//  Serial.print(":");
-//  Serial.println(second);
+  Serial.print(month);
+  Serial.print("/");
+  Serial.print(monthDay);
+  Serial.print("/");
+  Serial.print(year);
+  Serial.print(" ");
+  Serial.print(hour);
+  Serial.print(":");
+  Serial.print(minute);
+  Serial.print(":");
+  Serial.println(second);
   
   timeReading[0] = second;
   timeReading[1] = minute;
