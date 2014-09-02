@@ -12,7 +12,7 @@ const int tempSensor = 1;
 int counter = 1;
 const int musicPin1 = 10;
 const int fanPin1 = 9;
-const int fanPin2 = 8;
+const int fanPin2 = 7;
 int fanToggle_State = 0;
 int musicToggle_State = 0;
 
@@ -43,6 +43,7 @@ void setup() {
   Andee.clear();
   Wire.begin();
   pinMode(fanPin1, OUTPUT);
+  pinMode(fanPin2, OUTPUT);
   pinMode(lightHelperSensor, INPUT);
   pinMode(tempSensor, INPUT);
   initialize();
@@ -52,7 +53,8 @@ void loop() {
   welcome();
   checkToggleButton();
   checkFan_MusicButton();
-      setDate();
+  setDate();
+  setTemp();
   updateRTCautomation();
 }
 
@@ -62,7 +64,7 @@ byte bcdToDec(byte val) {
 }
 
 void setDate() {
-  Serial.println("setDate()");
+//  Serial.println("setDate()");
   // Reset the register pointer
   Wire.beginTransmission(DS1307_ADDRESS);
 
@@ -81,17 +83,17 @@ void setDate() {
   int year = bcdToDec(Wire.read());
 
   //print the date EG   3/1/11 23:59:59
-  Serial.print(month);
-  Serial.print("/");
-  Serial.print(monthDay);
-  Serial.print("/");
-  Serial.print(year);
-  Serial.print(" ");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.print(minute);
-  Serial.print(":");
-  Serial.println(second);
+//  Serial.print(month);
+//  Serial.print("/");
+//  Serial.print(monthDay);
+//  Serial.print("/");
+//  Serial.print(year);
+//  Serial.print(" ");
+//  Serial.print(hour);
+//  Serial.print(":");
+//  Serial.print(minute);
+//  Serial.print(":");
+//  Serial.println(second);
   
   timeReading[0] = second;
   timeReading[1] = minute;
@@ -100,7 +102,7 @@ void setDate() {
 }
 
 void initialize() {
-  Serial.println("initialize()");
+//  Serial.println("initialize()");
 //  lightHelper.setId(1);
 //  lightHelper.setType(SLIDER_IN);
 //  lightHelper.setLocation(1,0,FULL);
@@ -148,8 +150,29 @@ void initialize() {
   musicToggleHelper.setColor(RED);
 }
 
+void setTemp() {
+  tempReading = analogRead(tempSensor);  
+ 
+ // converting that reading to voltage, for 3.3v arduino use 3.3
+ float voltage = tempReading * 5;
+ voltage /= 1024.0;
+ 
+ // print out the voltage
+ Serial.print(voltage); Serial.println(" volts");
+ 
+ // now print out the temperature
+ float temperatureC = (voltage - 0.5) * 100 ;  //converting from 10 mv per degree wit 500 mV offset
+                                               //to degrees ((voltage - 500mV) times 100)
+ Serial.print(temperatureC); Serial.println(" degrees C");
+ 
+ // now convert to Fahrenheit
+ float temperatureF = (temperatureC * 9.0 / 5.0) + 32.0;
+ Serial.print(temperatureF); Serial.println(" degrees F");
+ 
+ delay(30);
+}
+
 void welcome() {
-  Serial.println("welcome()");
   if (welcomed) {
     welcomeHelper.update();
     delay(2000);
@@ -160,7 +183,7 @@ void welcome() {
 }
 
 void updateRTCautomation() {
-  Serial.println("updateRTCautomation()");
+//  Serial.println("updateRTCautomation()");
   if (timeReading[3] != 6 || timeReading[3] != 7) {
     if ((timeReading[2] >= 17 && timeReading[2] <= 18) || (timeReading[2] >= 23 && timeReading[2] <= 3)) {
       setFanPin1(HIGH);
@@ -219,21 +242,26 @@ void changeDisplay(AndeeHelper helper, int newReading) {
 }
 
 void checkFan_MusicButton() {
-  digitalWrite(13,HIGH);
  if(fanToggleHelper.isPressed()){
     fanToggleHelper.ack();
-    if(fanToggle_State == 0){
-    fanToggle_State = 1;
-    fanToggleHelper.setColor(GREEN);
-    fanToggleHelper.setTitle("Fan On");
-    fanToggleHelper.update();
+    if(fanToggle_State == 0) {
+      fanToggle_State = 1;
+      fanToggleHelper.setColor(GREEN);
+      fanToggleHelper.setTitle("Fan On");
+      fanToggleHelper.update();
     } else {
-     fanToggle_State = 0;
-     fanToggleHelper.setColor(RED);
-     fanToggleHelper.setTitle("Fan Off");
-     fanToggleHelper.update();
-     Serial.println("OFF");
+       fanToggle_State = 0;
+       fanToggleHelper.setColor(RED);
+       fanToggleHelper.setTitle("Fan Off");
+       fanToggleHelper.update();
      }
+  }
+  if (fanToggle_State == 0) {
+    setFanPin1(LOW);
+    setFanPin2(LOW);
+  } else {
+    setFanPin1(HIGH);
+    setFanPin2(HIGH);
   }
   if(musicToggleHelper.isPressed()){
     musicToggleHelper.ack();
@@ -251,6 +279,11 @@ void checkFan_MusicButton() {
       setMusicPin(LOW);
     }
   } 
+  if (musicToggle_State == 0) {
+    setMusicPin(LOW);
+  } else {
+    setMusicPin(HIGH);
+  }
 }
 
 void setFanPin1(int value) {
